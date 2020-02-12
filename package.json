@@ -1,0 +1,31 @@
+{
+  "name": "sync-fork-repo",
+  "version": "1.0.0",
+  "description": "the script to sync the forked repo automatically",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/guguji5/sync-fork-repo.git"
+  },
+  "keywords": [
+    "sync"
+  ],
+  "author": "guguji5",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/guguji5/sync-fork-repo/issues"
+  },
+  "dependencies": {
+    "@octokit/rest": "^16.15.0",
+    "bluebird": "^3.5.3",
+    "commander": "^2.19.0",
+    "cron": "^1.6.0",
+    "env-cmd": "^6.0.0",
+    "log4js": "^4.0.2",
+    "shelljs": "^0.7.8"
+  },
+  "homepage": "https://github.com/guguji5/sync-fork-repo#readme"
+}
