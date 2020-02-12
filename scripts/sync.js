@@ -88,7 +88,7 @@ const lines = output.split('\n');
 // Commit all merge conflicts
 const conflictLines = lines.filter(line => line.startsWith('CONFLICT'));
 const conflictFiles = conflictLines.map(line =>
-  line.substr(line.lastIndexOf(' ') + 1),
+  line.substr(line.lastIndexOf(' ') + 1)
 );
 
 shell.exec(`git commit -am "merging all conflicts"`);
