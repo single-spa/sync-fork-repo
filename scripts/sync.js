@@ -24,7 +24,12 @@ const langCode='zh-hans';
 
 // const {code: langCode, maintainers} = getJSON(langConfigFile);
 
-const logger = log4js.getLogger(langCode);
+log4js.configure({
+  appenders: { info: { type: 'file', filename: 'info.log' } },
+  categories: { default: { appenders: ['info'], level: 'info' } }
+});
+
+const logger = log4js.getLogger('info');
 logger.level = 'info';
 
 const originalUrl = `https://github.com/${owner}/${repository}.git`;
@@ -41,7 +46,7 @@ function teardownAndExit() {
     shell.cd('..');
     shell.rm('-rf', transRepoName);
   }
-  process.exit(0);
+  log4js.shutdown(function() { process.exit(0);})
 }
 
 // Set up
@@ -69,7 +74,7 @@ shell.exec(`git pull origin ${defaultBranch}`);
 
 // Check out a new branch
 shell.exec(`git fetch ${repository} ${defaultBranch}`);
-const hash = shell.exec(`git rev-parse ${repository}/${defaultBranch}`).stdout;
+const hash = shell.exec(`git rev-parse ${defaultBranch}`).stdout;
 const shortHash = hash.substr(0, 8);
 
 const syncBranch = `sync-${shortHash}`;
