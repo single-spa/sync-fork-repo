@@ -1,6 +1,6 @@
 const shell = require('shelljs');
 const log4js = require('log4js');
-const Octokit = require('@octokit/rest');
+const { Octokit } = require("@octokit/rest")
 const program = require('commander');
 const {getJSON} = require('../util');
 // shell.config.silent = true;
@@ -176,13 +176,13 @@ async function createPullRequest() {
       head: syncBranch,
       base: defaultBranch,
     });
-  
+
     await octokit.pulls.createReviewRequest({
       owner:'guguji5',
       repo: transRepoName,
-      number,
+      pull_number:number,
       // reviewers: getRandomSubset(maintainers, 3),
-      reviewers: ["sunzefang"],
+      reviewers: ["guguji5"],
     });
   }
   catch(err){
