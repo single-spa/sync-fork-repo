@@ -10,8 +10,8 @@ program // options
   .option('-d, --delete', 'Delete repo when done')
   .parse(process.argv);
 
-const owner = 'sunzefang'
-const repository = 'doc';
+const owner = 'single-spa'
+const repository = 'single-spa.js.org';
 const langCode='zh-hans';
 
 log4js.configure({
@@ -30,10 +30,6 @@ const transRepoName = `${langCode}.${repository}`;
 const transUrl = `https://${username}:${token}@github.com/guguji5/${transRepoName}.git`;
 const defaultBranch = 'master';
 
-let USER_NAME = shell.exec('echo $USER_NAME').stdout
-logger.info(`USER_NAME is ${USER_NAME}`)
-let SHELL = shell.exec('echo $SHELL').stdout
-logger.info(`SHELL is ${SHELL}`)
 // Set up
 if (shell.cd('repo').code !== 0) {
   shell.mkdir('repo');
@@ -108,7 +104,7 @@ if (output.includes('Already up to date.')) {
     const body = `
     This PR was automatically generated.
 
-    Merge changes from [sunzefang/doc](https://github.com/sunzefang/doc) at ${shortHash}
+    Merge changes from [single-spa/single-spa.js.orgc](https://github.com/single-spa/single-spa.js.org) at ${shortHash}
 
     ${conflictFiles.length > 0 ? conflictsText : 'No conflicts were found.'}
 
