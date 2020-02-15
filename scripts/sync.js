@@ -68,8 +68,6 @@ if (output.includes('Already up to date.')) {
   logger.info(`We are already up to date with ${repository}.`);
 }else{
   logger.info(`There are new commits in ${repository}.`);
-  const logs = shell.exec(`git log --oneline`).stdout;
-  console.log(logs)
   const hash = shell.exec(`git rev-parse ${defaultBranch}`).stdout;
   const shortHash = hash.substr(0, 8);
   const syncBranch = `sync-${shortHash}`;
@@ -123,25 +121,6 @@ if (output.includes('Already up to date.')) {
     Doing so will "erase" the commits from master and cause them to show up as conflicts the next time we merge.
     `;
 
-    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random#Getting_a_random_integer_between_two_values
-    function getRandomInt(min, max) {
-      min = Math.ceil(min);
-      max = Math.floor(max);
-      return Math.floor(Math.random() * (max - min + 1)) + min;
-    }
-
-    function getRandomSubset(array, n) {
-      if (array.length <= n) {
-        return array;
-      }
-      const copy = [...array];
-      let result = [];
-      while (result.length < n) {
-        const i = getRandomInt(0, copy.length);
-        result = result.concat(copy.splice(i, 1));
-      }
-      return result;
-    }
     logger.info(`It's ready to create a pull request.`);
     async function createPullRequest() {
       const octokit = new Octokit({
@@ -152,7 +131,6 @@ if (output.includes('Already up to date.')) {
         const {
           data: {number},
         } = await octokit.pulls.create({
-          // owner,
           owner:'guguji5',
           repo: transRepoName,
           title,
@@ -164,21 +142,39 @@ if (output.includes('Already up to date.')) {
         await octokit.pulls.createReviewRequest({
           owner:'guguji5',
           repo: transRepoName,
-              pull_number:number,
-              // reviewers: getRandomSubset(maintainers, 3),
-              reviewers: ["guguji5"],
-            });
-          }
-          catch(err){
-            console.log(err)
-            logger.error(`the err is \n ${err}`)
-          }
+          pull_number:number,
+          // reviewers: getRandomSubset(maintainers, 3),
+          reviewers: ["guguji5"],
+        });
         logger.info(`The review request is created successly`);
       }
-
-      createPullRequest();
-    }else{
-      logger.info(`sync-${shortHash} is there, there are pull request are created.`);
+      catch(err){
+        console.log(err)
+        logger.error(`the err is \n ${err}`)
+      }
     }
+    createPullRequest();
+  }else{
+    logger.info(`The pull request of sync-${shortHash} is pending `);
+  }
 }
 
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random#Getting_a_random_integer_between_two_values
+function getRandomInt(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function getRandomSubset(array, n) {
+  if (array.length <= n) {
+    return array;
+  }
+  const copy = [...array];
+  let result = [];
+  while (result.length < n) {
+    const i = getRandomInt(0, copy.length);
+    result = result.concat(copy.splice(i, 1));
+  }
+  return result;
+}
