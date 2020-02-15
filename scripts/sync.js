@@ -5,6 +5,7 @@ const program = require('commander');
 const {getJSON} = require('../util');
 // shell.config.silent = true;
 
+
 program // options
   .option('-d, --delete', 'Delete repo when done')
   .parse(process.argv);
@@ -29,6 +30,10 @@ const transRepoName = `${langCode}.${repository}`;
 const transUrl = `https://${username}:${token}@github.com/guguji5/${transRepoName}.git`;
 const defaultBranch = 'master';
 
+let USER_NAME = shell.exec('echo $USER_NAME').stdout
+logger.info(`USER_NAME is ${USER_NAME}`)
+let SHELL = shell.exec('echo $SHELL').stdout
+logger.info(`SHELL is ${SHELL}`)
 // Set up
 if (shell.cd('repo').code !== 0) {
   shell.mkdir('repo');
@@ -155,7 +160,7 @@ if (output.includes('Already up to date.')) {
           head: syncBranch,
           base: defaultBranch,
         });
-        logger.info(`the number is ${number}`);
+        logger.info(`The pull request is created successly,its number is ${number}`);
         await octokit.pulls.createReviewRequest({
           owner:'guguji5',
           repo: transRepoName,
@@ -168,6 +173,7 @@ if (output.includes('Already up to date.')) {
             console.log(err)
             logger.error(`the err is \n ${err}`)
           }
+        logger.info(`The review request is created successly`);
       }
 
       createPullRequest();
