@@ -62,6 +62,7 @@ const output = shell.exec(`git pull ${repository} ${defaultBranch}`).stdout;
 if (output.includes('Already up to date.')) {
   logger.info(`We are already up to date with ${repository}.`);
 }else{
+  logger.info(`There are new commits in ${repository}.`);
   const hash = shell.exec(`git rev-parse ${defaultBranch}`).stdout;
   const shortHash = hash.substr(0, 8);
   const syncBranch = `sync-${shortHash}`;
@@ -134,7 +135,7 @@ if (output.includes('Already up to date.')) {
     }
     return result;
   }
-      
+  logger.info(`It's ready to create a pull request.`);
   async function createPullRequest() {
     const octokit = new Octokit({
       auth: `token ${token}`,
