@@ -171,6 +171,8 @@ if (output.includes('Already up to date.')) {
       }
 
       createPullRequest();
+    }else{
+      logger.info(`sync-${shortHash} is there, there are pull request are created.`);
     }
 }
 
