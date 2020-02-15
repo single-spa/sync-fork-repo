@@ -54,20 +54,20 @@ shell.exec(`git config user.name ${process.env.USER_NAME}`);
 shell.exec(`git config user.email ${process.env.USER_EMAIL}`);
 
 // Check out a new branch
-shell.exec(`git fetch ${repository} ${defaultBranch}`);
-const hash = shell.exec(`git rev-parse ${defaultBranch}`).stdout;
-const shortHash = hash.substr(0, 8);
+// shell.exec(`git fetch ${repository} ${defaultBranch}`);
 
-const syncBranch = `sync-${shortHash}`;
-if (shell.exec(`git checkout ${syncBranch}`).code !== 0) {
-  shell.exec(`git checkout -b ${syncBranch}`);
-}
 
 // Pull from {source}/master
 const output = shell.exec(`git pull ${repository} ${defaultBranch}`).stdout;
 if (output.includes('Already up to date.')) {
   logger.info(`We are already up to date with ${repository}.`);
 }else{
+  const hash = shell.exec(`git rev-parse ${defaultBranch}`).stdout;
+  const shortHash = hash.substr(0, 8);
+  const syncBranch = `sync-${shortHash}`;
+  if (shell.exec(`git checkout ${syncBranch}`).code !== 0) {
+    shell.exec(`git checkout -b ${syncBranch}`);
+  }
   const lines = output.split('\n');
   // Commit all merge conflicts
   const conflictLines = lines.filter(line => line.startsWith('CONFLICT'));
