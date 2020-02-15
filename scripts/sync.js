@@ -63,6 +63,8 @@ if (output.includes('Already up to date.')) {
   logger.info(`We are already up to date with ${repository}.`);
 }else{
   logger.info(`There are new commits in ${repository}.`);
+  const logs = shell.exec(`git log --oneline`).stdout;
+  console.log(logs)
   const hash = shell.exec(`git rev-parse ${defaultBranch}`).stdout;
   const shortHash = hash.substr(0, 8);
   const syncBranch = `sync-${shortHash}`;
