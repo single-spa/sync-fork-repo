@@ -155,7 +155,7 @@ if (output.includes('Already up to date.')) {
           head: syncBranch,
           base: defaultBranch,
         });
-
+        logger.info(`the number is ${number}`);
         await octokit.pulls.createReviewRequest({
           owner:'guguji5',
           repo: transRepoName,
@@ -166,6 +166,7 @@ if (output.includes('Already up to date.')) {
           }
           catch(err){
             console.log(err)
+            logger.error(`the err is \n ${err}`)
           }
       }
 
