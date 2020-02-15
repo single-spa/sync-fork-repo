@@ -70,105 +70,106 @@ if (output.includes('Already up to date.')) {
   const syncBranch = `sync-${shortHash}`;
   if (shell.exec(`git checkout ${syncBranch}`).code !== 0) {
     shell.exec(`git checkout -b ${syncBranch}`);
-  }
-  const lines = output.split('\n');
-  // Commit all merge conflicts
-  const conflictLines = lines.filter(line => line.startsWith('CONFLICT'));
-  const conflictFiles = conflictLines.map(line =>
-    line.substr(line.lastIndexOf(' ') + 1),
-  );
+  
+    const lines = output.split('\n');
+    // Commit all merge conflicts
+    const conflictLines = lines.filter(line => line.startsWith('CONFLICT'));
+    const conflictFiles = conflictLines.map(line =>
+      line.substr(line.lastIndexOf(' ') + 1),
+    );
 
-  shell.exec(`git commit -am "merging all conflicts"`);
+    shell.exec(`git commit -am "merging all conflicts"`);
 
-  // whatever conflicts, always create a pull request.
-  if (conflictFiles.length === 0) {
-    logger.info('No conflicts found.');
-  }else{
-    logger.warn('conflict files: ', conflictFiles.join('\n'));
-  }
-
-
-  // Create a new pull request, listing all conflicting files
-  shell.exec(`git push --set-upstream origin ${syncBranch}`);
-
-  const title = `Sync with ${repository} @ ${shortHash}`;
-
-  const conflictsText = `
-  The following files have conflicts and may need new translations:
-
-    ${conflictFiles
-      .map(
-        file =>
-          ` * [ ] [${file}](/${owner}/${repository}/commits/master/${file})`,
-      )
-      .join('\n')}
-
-  Please fix the conflicts by pushing new commits to this pull request, either by editing the files directly on GitHub or by checking out this branch.
-  `;
-
-  const body = `
-  This PR was automatically generated.
-
-  Merge changes from [sunzefang/doc](https://github.com/sunzefang/doc) at ${shortHash}
-
-  ${conflictFiles.length > 0 ? conflictsText : 'No conflicts were found.'}
-
-  ## DO NOT SQUASH MERGE THIS PULL REQUEST!
-
-  Doing so will "erase" the commits from master and cause them to show up as conflicts the next time we merge.
-  `;
-
-  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random#Getting_a_random_integer_between_two_values
-  function getRandomInt(min, max) {
-    min = Math.ceil(min);
-    max = Math.floor(max);
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-  }
-
-  function getRandomSubset(array, n) {
-    if (array.length <= n) {
-      return array;
+    // whatever conflicts, always create a pull request.
+    if (conflictFiles.length === 0) {
+      logger.info('No conflicts found.');
+    }else{
+      logger.warn('conflict files: ', conflictFiles.join('\n'));
     }
-    const copy = [...array];
-    let result = [];
-    while (result.length < n) {
-      const i = getRandomInt(0, copy.length);
-      result = result.concat(copy.splice(i, 1));
+
+
+    // Create a new pull request, listing all conflicting files
+    shell.exec(`git push --set-upstream origin ${syncBranch}`);
+
+    const title = `Sync with ${repository} @ ${shortHash}`;
+
+    const conflictsText = `
+    The following files have conflicts and may need new translations:
+
+      ${conflictFiles
+        .map(
+          file =>
+            ` * [ ] [${file}](/${owner}/${repository}/commits/master/${file})`,
+        )
+        .join('\n')}
+
+    Please fix the conflicts by pushing new commits to this pull request, either by editing the files directly on GitHub or by checking out this branch.
+    `;
+
+    const body = `
+    This PR was automatically generated.
+
+    Merge changes from [sunzefang/doc](https://github.com/sunzefang/doc) at ${shortHash}
+
+    ${conflictFiles.length > 0 ? conflictsText : 'No conflicts were found.'}
+
+    ## DO NOT SQUASH MERGE THIS PULL REQUEST!
+
+    Doing so will "erase" the commits from master and cause them to show up as conflicts the next time we merge.
+    `;
+
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random#Getting_a_random_integer_between_two_values
+    function getRandomInt(min, max) {
+      min = Math.ceil(min);
+      max = Math.floor(max);
+      return Math.floor(Math.random() * (max - min + 1)) + min;
     }
-    return result;
-  }
-  logger.info(`It's ready to create a pull request.`);
-  async function createPullRequest() {
-    const octokit = new Octokit({
-      auth: `token ${token}`,
-      previews: ['hellcat-preview'],
-    });
-    try{
-      const {
-        data: {number},
-      } = await octokit.pulls.create({
-        // owner,
-        owner:'guguji5',
-        repo: transRepoName,
-        title,
-        body,
-        head: syncBranch,
-        base: defaultBranch,
+
+    function getRandomSubset(array, n) {
+      if (array.length <= n) {
+        return array;
+      }
+      const copy = [...array];
+      let result = [];
+      while (result.length < n) {
+        const i = getRandomInt(0, copy.length);
+        result = result.concat(copy.splice(i, 1));
+      }
+      return result;
+    }
+    logger.info(`It's ready to create a pull request.`);
+    async function createPullRequest() {
+      const octokit = new Octokit({
+        auth: `token ${token}`,
+        previews: ['hellcat-preview'],
       });
-
-      await octokit.pulls.createReviewRequest({
-        owner:'guguji5',
-        repo: transRepoName,
-          pull_number:number,
-          // reviewers: getRandomSubset(maintainers, 3),
-          reviewers: ["guguji5"],
+      try{
+        const {
+          data: {number},
+        } = await octokit.pulls.create({
+          // owner,
+          owner:'guguji5',
+          repo: transRepoName,
+          title,
+          body,
+          head: syncBranch,
+          base: defaultBranch,
         });
-      }
-      catch(err){
-        console.log(err)
-      }
-  }
 
-  createPullRequest();
+        await octokit.pulls.createReviewRequest({
+          owner:'guguji5',
+          repo: transRepoName,
+              pull_number:number,
+              // reviewers: getRandomSubset(maintainers, 3),
+              reviewers: ["guguji5"],
+            });
+          }
+          catch(err){
+            console.log(err)
+          }
+      }
+
+      createPullRequest();
+    }
 }
 
