@@ -9,20 +9,9 @@ program // options
   .option('-d, --delete', 'Delete repo when done')
   .parse(process.argv);
 
-// const [srcConfigFile, langConfigFile] = program.args;
-// if (!srcConfigFile) {
-//   throw new Error('Source config file not provided');
-// }
-// if (!langConfigFile) {
-//   throw new Error('Language config file not provided');
-// }
-
-// const {owner, repository} = getJSON(srcConfigFile);
 const owner = 'sunzefang'
 const repository = 'doc';
 const langCode='zh-hans';
-
-// const {code: langCode, maintainers} = getJSON(langConfigFile);
 
 log4js.configure({
   appenders: { info: { type: 'file', filename: 'info.log' } },
@@ -40,15 +29,6 @@ const transRepoName = `${langCode}.${repository}`;
 const transUrl = `https://${username}:${token}@github.com/guguji5/${transRepoName}.git`;
 const defaultBranch = 'master';
 
-function teardownAndExit() {
-  if (program.delete) {
-    logger.info('Cleaning up repo...');
-    shell.cd('..');
-    shell.rm('-rf', transRepoName);
-  }
-  log4js.shutdown(function() { process.exit(0);})
-}
-
 // Set up
 if (shell.cd('repo').code !== 0) {
   shell.mkdir('repo');
@@ -61,16 +41,17 @@ if (shell.cd(transRepoName).code !== 0) {
   logger.info('Finished cloning.');
   shell.cd(transRepoName);
   shell.exec(`git remote add ${repository} ${originalUrl}`);
+}else{
+  logger.info("The translation repo exists");
+  // Pull from our own origin
+  shell.exec(`git checkout ${defaultBranch}`);
+  shell.exec(`git pull origin ${defaultBranch}`);
+
+  shell.exec(`git remote add ${repository} ${originalUrl}`);
 }
 
 shell.exec(`git config user.name ${process.env.USER_NAME}`);
 shell.exec(`git config user.email ${process.env.USER_EMAIL}`);
-
-shell.exec(`git remote add ${repository} ${originalUrl}`);
-
-// Pull from our own origin
-shell.exec(`git checkout ${defaultBranch}`);
-shell.exec(`git pull origin ${defaultBranch}`);
 
 // Check out a new branch
 shell.exec(`git fetch ${repository} ${defaultBranch}`);
@@ -86,111 +67,105 @@ if (shell.exec(`git checkout ${syncBranch}`).code !== 0) {
 const output = shell.exec(`git pull ${repository} ${defaultBranch}`).stdout;
 if (output.includes('Already up to date.')) {
   logger.info(`We are already up to date with ${repository}.`);
-  teardownAndExit();
-}
-const lines = output.split('\n');
+}else{
+  const lines = output.split('\n');
+  // Commit all merge conflicts
+  const conflictLines = lines.filter(line => line.startsWith('CONFLICT'));
+  const conflictFiles = conflictLines.map(line =>
+    line.substr(line.lastIndexOf(' ') + 1),
+  );
 
-// Commit all merge conflicts
-const conflictLines = lines.filter(line => line.startsWith('CONFLICT'));
-const conflictFiles = conflictLines.map(line =>
-  line.substr(line.lastIndexOf(' ') + 1)
-);
+  shell.exec(`git commit -am "merging all conflicts"`);
 
-shell.exec(`git commit -am "merging all conflicts"`);
-
-// If no conflicts, merge directly into master
-if (conflictFiles.length === 0) {
-  logger.info('No conflicts found. Committing directly to master.');
-  shell.exec(`git checkout ${defaultBranch}`);
-  shell.exec(`git merge ${syncBranch}`);
-  shell.exec(`git push origin ${defaultBranch}`);
-  teardownAndExit();
-}
-
-logger.warn('conflict files: ', conflictFiles.join('\n'));
-
-// Create a new pull request, listing all conflicting files
-shell.exec(`git push --set-upstream origin ${syncBranch}`);
-
-const title = `Sync with ${repository} @ ${shortHash}`;
-
-const conflictsText = `
-The following files have conflicts and may need new translations:
-
-  ${conflictFiles
-    .map(
-      file =>
-        ` * [ ] [${file}](/${owner}/${repository}/commits/master/${file})`,
-    )
-    .join('\n')}
-
-Please fix the conflicts by pushing new commits to this pull request, either by editing the files directly on GitHub or by checking out this branch.
-`;
-
-const body = `
-This PR was automatically generated.
-
-Merge changes from [sunzefang/doc](https://github.com/sunzefang/doc) at ${shortHash}
-
-${conflictFiles.length > 0 ? conflictsText : 'No conflicts were found.'}
-
-## DO NOT SQUASH MERGE THIS PULL REQUEST!
-
-Doing so will "erase" the commits from master and cause them to show up as conflicts the next time we merge.
-`;
-
-// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random#Getting_a_random_integer_between_two_values
-function getRandomInt(min, max) {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function getRandomSubset(array, n) {
-  if (array.length <= n) {
-    return array;
+  // whatever conflicts, always create a pull request.
+  if (conflictFiles.length === 0) {
+    logger.info('No conflicts found.');
+  }else{
+    logger.warn('conflict files: ', conflictFiles.join('\n'));
   }
-  const copy = [...array];
-  let result = [];
-  while (result.length < n) {
-    const i = getRandomInt(0, copy.length);
-    result = result.concat(copy.splice(i, 1));
-  }
-  return result;
-}
 
-async function createPullRequest() {
-  const octokit = new Octokit({
-    auth: `token ${token}`,
-    previews: ['hellcat-preview'],
-  });
-  try{
-    const {
-      data: {number},
-    } = await octokit.pulls.create({
-      // owner,
-      owner:'guguji5',
-      repo: transRepoName,
-      title,
-      body,
-      head: syncBranch,
-      base: defaultBranch,
+
+  // Create a new pull request, listing all conflicting files
+  shell.exec(`git push --set-upstream origin ${syncBranch}`);
+
+  const title = `Sync with ${repository} @ ${shortHash}`;
+
+  const conflictsText = `
+  The following files have conflicts and may need new translations:
+
+    ${conflictFiles
+      .map(
+        file =>
+          ` * [ ] [${file}](/${owner}/${repository}/commits/master/${file})`,
+      )
+      .join('\n')}
+
+  Please fix the conflicts by pushing new commits to this pull request, either by editing the files directly on GitHub or by checking out this branch.
+  `;
+
+  const body = `
+  This PR was automatically generated.
+
+  Merge changes from [sunzefang/doc](https://github.com/sunzefang/doc) at ${shortHash}
+
+  ${conflictFiles.length > 0 ? conflictsText : 'No conflicts were found.'}
+
+  ## DO NOT SQUASH MERGE THIS PULL REQUEST!
+
+  Doing so will "erase" the commits from master and cause them to show up as conflicts the next time we merge.
+  `;
+
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random#Getting_a_random_integer_between_two_values
+  function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function getRandomSubset(array, n) {
+    if (array.length <= n) {
+      return array;
+    }
+    const copy = [...array];
+    let result = [];
+    while (result.length < n) {
+      const i = getRandomInt(0, copy.length);
+      result = result.concat(copy.splice(i, 1));
+    }
+    return result;
+  }
+      
+  async function createPullRequest() {
+    const octokit = new Octokit({
+      auth: `token ${token}`,
+      previews: ['hellcat-preview'],
     });
+    try{
+      const {
+        data: {number},
+      } = await octokit.pulls.create({
+        // owner,
+        owner:'guguji5',
+        repo: transRepoName,
+        title,
+        body,
+        head: syncBranch,
+        base: defaultBranch,
+      });
 
-    await octokit.pulls.createReviewRequest({
-      owner:'guguji5',
-      repo: transRepoName,
-      pull_number:number,
-      // reviewers: getRandomSubset(maintainers, 3),
-      reviewers: ["guguji5"],
-    });
+      await octokit.pulls.createReviewRequest({
+        owner:'guguji5',
+        repo: transRepoName,
+          pull_number:number,
+          // reviewers: getRandomSubset(maintainers, 3),
+          reviewers: ["guguji5"],
+        });
+      }
+      catch(err){
+        console.log(err)
+      }
   }
-  catch(err){
-    console.log(err)
-  }
-  
 
-  teardownAndExit();
+  createPullRequest();
 }
 
-createPullRequest();
