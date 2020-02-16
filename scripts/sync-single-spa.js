@@ -75,77 +75,78 @@ if (output.includes('Already up to date.') || output.includes('Already up-to-dat
 
     shell.exec(`git commit -am "merging all conflicts"`);
 
-    // whatever conflicts, always create a pull request.
+    // If no conflicts, merge directly into master
     if (conflictFiles.length === 0) {
-      logger.info('No conflicts found.');
+      logger.info('No conflicts found. Committing directly to master.');
+      shell.exec(`git checkout ${defaultBranch}`);
+      shell.exec(`git merge ${syncBranch}`);
+      shell.exec(`git push origin ${defaultBranch}`);
     }else{
       logger.warn('conflict files: ', conflictFiles.join('\n'));
-    }
+      // Create a new pull request, listing all conflicting files
+      shell.exec(`git push --set-upstream origin ${syncBranch}`);
 
+      const title = `Sync with ${repository} @ ${shortHash}`;
 
-    // Create a new pull request, listing all conflicting files
-    shell.exec(`git push --set-upstream origin ${syncBranch}`);
+      const conflictsText = `
+      The following files have conflicts and may need new translations:
 
-    const title = `Sync with ${repository} @ ${shortHash}`;
+        ${conflictFiles
+          .map(
+            file =>
+              ` * [ ] [${file}](/${owner}/${repository}/commits/master/${file})`,
+          )
+          .join('\n')}
 
-    const conflictsText = `
-    The following files have conflicts and may need new translations:
+      Please fix the conflicts by pushing new commits to this pull request, either by editing the files directly on GitHub or by checking out this branch.
+      `;
 
-      ${conflictFiles
-        .map(
-          file =>
-            ` * [ ] [${file}](/${owner}/${repository}/commits/master/${file})`,
-        )
-        .join('\n')}
+      const body = `
+      This PR was automatically generated.
 
-    Please fix the conflicts by pushing new commits to this pull request, either by editing the files directly on GitHub or by checking out this branch.
-    `;
+      Merge changes from [single-spa/single-spa.js.orgc](https://github.com/single-spa/single-spa.js.org) at ${shortHash}
 
-    const body = `
-    This PR was automatically generated.
+      ${conflictFiles.length > 0 ? conflictsText : 'No conflicts were found.'}
 
-    Merge changes from [single-spa/single-spa.js.orgc](https://github.com/single-spa/single-spa.js.org) at ${shortHash}
+      ## DO NOT SQUASH MERGE THIS PULL REQUEST!
 
-    ${conflictFiles.length > 0 ? conflictsText : 'No conflicts were found.'}
+      Doing so will "erase" the commits from master and cause them to show up as conflicts the next time we merge.
+      `;
 
-    ## DO NOT SQUASH MERGE THIS PULL REQUEST!
-
-    Doing so will "erase" the commits from master and cause them to show up as conflicts the next time we merge.
-    `;
-
-    logger.info(`It's ready to create a pull request.`);
-    async function createPullRequest() {
-      const octokit = new Octokit({
-        auth: `token ${token}`,
-        previews: ['hellcat-preview'],
-      });
-      try{
-        const {
-          data: {number},
-        } = await octokit.pulls.create({
-          owner:'guguji5',
-          repo: transRepoName,
-          title,
-          body,
-          head: syncBranch,
-          base: defaultBranch,
+      logger.info(`It's ready to create a pull request.`);
+      async function createPullRequest() {
+        const octokit = new Octokit({
+          auth: `token ${token}`,
+          previews: ['hellcat-preview'],
         });
-        logger.info(`The pull request is created successly,its number is ${number}`);
-        await octokit.pulls.createReviewRequest({
-          owner:'guguji5',
-          repo: transRepoName,
-          pull_number:number,
-          // reviewers: getRandomSubset(maintainers, 3),
-          reviewers: ["guguji5"],
-        });
-        logger.info(`The review request is created successly`);
+        try{
+          const {
+            data: {number},
+          } = await octokit.pulls.create({
+            owner:'guguji5',
+            repo: transRepoName,
+            title,
+            body,
+            head: syncBranch,
+            base: defaultBranch,
+          });
+          logger.info(`The pull request is created successly,its number is ${number}`);
+          await octokit.pulls.createReviewRequest({
+            owner:'guguji5',
+            repo: transRepoName,
+            pull_number:number,
+            // reviewers: getRandomSubset(maintainers, 3),
+            reviewers: ["guguji5"],
+          });
+          logger.info(`The review request is created successly`);
+        }
+        catch(err){
+          console.log(err)
+          logger.error(`the err is \n ${err}`)
+        }
       }
-      catch(err){
-        console.log(err)
-        logger.error(`the err is \n ${err}`)
-      }
+      createPullRequest();
     }
-    createPullRequest();
   }else{
     logger.info(`The pull request of sync-${shortHash} is pending `);
   }
