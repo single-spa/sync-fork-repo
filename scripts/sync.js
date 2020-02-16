@@ -60,7 +60,8 @@ shell.exec(`git config user.email ${process.env.USER_EMAIL}`);
 
 // Pull from {source}/master
 const output = shell.exec(`git pull ${repository} ${defaultBranch}`).stdout;
-if (output.includes('Already up to date.')) {
+
+if (output.includes('Already up to date.') || output.includes('Already up-to-date.')) {
   logger.info(`We are already up to date with ${repository}.`);
 }else{
   logger.info(`There are new commits in ${repository}.`);
