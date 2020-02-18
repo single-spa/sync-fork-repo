@@ -30,6 +30,7 @@ const transRepoName = `${langCode}.${repository}`;
 const transUrl = `https://${username}:${token}@github.com/${owner}/${transRepoName}.git`;
 const defaultBranch = 'master';
 
+logger.info(`Begin to sync the ${transRepoName}`)
 // Set up
 if (shell.cd('repo').code !== 0) {
   shell.mkdir('repo');

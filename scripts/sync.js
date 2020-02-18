@@ -34,6 +34,8 @@ let USER_NAME = shell.exec('echo $USER_NAME').stdout
 logger.info(`USER_NAME is ${USER_NAME}`)
 let SHELL = shell.exec('echo $SHELL').stdout
 logger.info(`SHELL is ${SHELL}`)
+
+logger.info(`Begin to sync the ${transRepoName}`)
 // Set up
 if (shell.cd('repo').code !== 0) {
   shell.mkdir('repo');
