@@ -19,7 +19,7 @@ log4js.configure({
   categories: { default: { appenders: ['info'], level: 'info' } }
 });
 
-const logger = log4js.getLogger('info');
+const logger = log4js.getLogger('single-spa');
 logger.level = 'info';
 
 const originalUrl = `https://github.com/${owner}/${repository}.git`;
@@ -27,7 +27,7 @@ const username = process.env.USER_NAME;
 const token = process.env.GITHUB_ACCESS_TOKEN;
 
 const transRepoName = `${langCode}.${repository}`;
-const transUrl = `https://${username}:${token}@github.com/guguji5/${transRepoName}.git`;
+const transUrl = `https://${username}:${token}@github.com/${owner}/${transRepoName}.git`;
 const defaultBranch = 'master';
 
 // Set up
@@ -123,7 +123,7 @@ if (output.includes('Already up to date.') || output.includes('Already up-to-dat
           const {
             data: {number},
           } = await octokit.pulls.create({
-            owner:'guguji5',
+            owner,
             repo: transRepoName,
             title,
             body,
@@ -132,7 +132,7 @@ if (output.includes('Already up to date.') || output.includes('Already up-to-dat
           });
           logger.info(`The pull request is created successly,its number is ${number}`);
           await octokit.pulls.createReviewRequest({
-            owner:'guguji5',
+            owner,
             repo: transRepoName,
             pull_number:number,
             // reviewers: getRandomSubset(maintainers, 3),
