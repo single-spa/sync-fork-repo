@@ -5,6 +5,9 @@ const program = require('commander');
 const {getJSON} = require('../util');
 // shell.config.silent = true;
 
+let arguments = process.argv.splice(2)
+let langCode = arguments[0]
+let reviewers = arguments[1]
 
 program // options
   .option('-d, --delete', 'Delete repo when done')
@@ -12,14 +15,13 @@ program // options
 
 const owner = 'single-spa'
 const repository = 'single-spa.js.org';
-const langCode='zh-hans';
 
 log4js.configure({
   appenders: { info: { type: 'file', filename: 'info.log' } },
   categories: { default: { appenders: ['info'], level: 'info' } }
 });
 
-const logger = log4js.getLogger('single-spa');
+const logger = log4js.getLogger(langCode);
 logger.level = 'info';
 
 const originalUrl = `https://github.com/${owner}/${repository}.git`;
@@ -114,12 +116,15 @@ if (output.includes('Already up to date.') || output.includes('Already up-to-dat
       Doing so will "erase" the commits from master and cause them to show up as conflicts the next time we merge.
       `;
 
-      logger.info(`It's ready to create a pull request.`);
+      let retryNum =0
       async function createPullRequest() {
+        logger.info(`It's ready to create a pull request.`);
+        retryNum++;
         const octokit = new Octokit({
           auth: `token ${token}`,
           previews: ['hellcat-preview'],
         });
+      
         try{
           const {
             data: {number},
@@ -137,13 +142,14 @@ if (output.includes('Already up to date.') || output.includes('Already up-to-dat
             repo: transRepoName,
             pull_number:number,
             // reviewers: getRandomSubset(maintainers, 3),
-            reviewers: ["guguji5"],
+            reviewers
           });
           logger.info(`The review request is created successly`);
         }
         catch(err){
           console.log(err)
           logger.error(`the err is \n ${err}`)
+          retryNum<5 && createPullRequest()
         }
       }
       createPullRequest();
