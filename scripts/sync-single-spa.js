@@ -66,6 +66,8 @@ if (output.includes('Already up to date.') || output.includes('Already up-to-dat
   const hash = shell.exec(`git rev-parse ${defaultBranch}`).stdout;
   const shortHash = hash.substr(0, 8);
   const syncBranch = `sync-${shortHash}`;
+  
+  shell.exec(`git commit -am "merging all conflicts"`);
   if (shell.exec(`git checkout ${syncBranch}`).code !== 0) {
     shell.exec(`git checkout -b ${syncBranch}`);
   
@@ -75,8 +77,6 @@ if (output.includes('Already up to date.') || output.includes('Already up-to-dat
     const conflictFiles = conflictLines.map(line =>
       line.substr(line.lastIndexOf(' ') + 1),
     );
-
-    shell.exec(`git commit -am "merging all conflicts"`);
 
     // If no conflicts, merge directly into master
     if (conflictFiles.length === 0) {
