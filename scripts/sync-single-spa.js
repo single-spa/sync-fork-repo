@@ -63,11 +63,11 @@ if (output.includes('Already up to date.') || output.includes('Already up-to-dat
   logger.info(`We are already up to date with ${repository}.`);
 }else{
   logger.info(`There are new commits in ${repository}.`);
+  shell.exec(`git commit -am "merging all conflicts"`);
   const hash = shell.exec(`git rev-parse ${defaultBranch}`).stdout;
   const shortHash = hash.substr(0, 8);
   const syncBranch = `sync-${shortHash}`;
   
-  shell.exec(`git commit -am "merging all conflicts"`);
   if (shell.exec(`git checkout ${syncBranch}`).code !== 0) {
     shell.exec(`git checkout -b ${syncBranch}`);
   
