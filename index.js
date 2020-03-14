@@ -26,7 +26,7 @@ Promise.map(
   langs(),
   lang => {
     return shell.exec(
-      `node scripts/sync-single-spa.js ${lang.code} ${lang.reviewer}`,
+      `node ./scripts/sync-single-spa.js ${lang.code} ${lang.reviewer}`,
     );
   }
 );
