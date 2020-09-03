@@ -8,6 +8,10 @@ module.exports=function(){
       "name": "Portuguese",
       "code": "pt-pt",
       "reviewers": ["mstrlaw"]
+    },{
+      "name": "Spanish",
+      "code": "es",
+      "reviewers": ["codesandtags","crorodriguezro","diegohoyos"]
     },
     
   ]
