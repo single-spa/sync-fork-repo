@@ -9,6 +9,7 @@ const langs = require('./scripts/langs');
 const Promise = require('bluebird');
 const shell = Promise.promisifyAll(require('shelljs'));
 const program = require('commander');
+let arguments = process.argv.splice(2)
 
 program
   .option('-c, --concurrency <n>', 'Concurrency to run script', parseInt)
@@ -26,7 +27,7 @@ Promise.map(
   langs(),
   lang => {
     return shell.exec(
-      `node ./scripts/sync-single-spa.js ${lang.code} ${lang.reviewer}`,
+      `node ./scripts/sync-single-spa.js ${lang.code} ${lang.reviewers} single-spa-bot ${arguments[0]} guguji5@163.com`,
     );
   }
 );

@@ -8,6 +8,9 @@ const {getJSON} = require('../util');
 let arguments = process.argv.splice(2)
 let langCode = arguments[0]
 let reviewers = arguments[1]
+const username = arguments[2];
+const token = arguments[3];
+const email = arguments[4];
 
 program // options
   .option('-d, --delete', 'Delete repo when done')
@@ -25,8 +28,8 @@ const logger = log4js.getLogger(langCode);
 logger.level = 'info';
 
 const originalUrl = `https://github.com/${owner}/${repository}.git`;
-const username = process.env.USER_NAME;
-const token = process.env.GITHUB_ACCESS_TOKEN;
+// const username = process.env.USER_NAME;
+// const token = process.env.GITHUB_ACCESS_TOKEN;
 
 const transRepoName = `${langCode}.${repository}`;
 const transUrl = `https://${username}:${token}@github.com/${owner}/${transRepoName}.git`;
@@ -54,8 +57,9 @@ if (shell.cd(transRepoName).code !== 0) {
   shell.exec(`git remote add ${repository} ${originalUrl}`);
 }
 
-shell.exec(`git config user.name ${process.env.USER_NAME}`);
-shell.exec(`git config user.email ${process.env.USER_EMAIL}`);
+shell.exec(`git config user.name ${username}`);
+shell.exec(`git config user.email ${email}`);
+shell.exec(`git config pull.ff only`);
 
 // Pull from {source}/master
 const output = shell.exec(`git pull ${repository} ${defaultBranch}`).stdout;
