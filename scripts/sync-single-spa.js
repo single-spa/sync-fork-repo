@@ -11,11 +11,7 @@ let reviewers = arguments[1]
 const username = arguments[2];
 const token = arguments[3];
 const email = arguments[4];
-console.log(`langCode is ${langCode}`)
-console.log(`reviewers is ${reviewers}`)
-console.log(`username is ${username}`)
-console.log(`token is ${token}`)
-console.log(`email is ${email}`)
+
 program // options
   .option('-d, --delete', 'Delete repo when done')
   .parse(process.argv);
@@ -39,7 +35,7 @@ const transRepoName = `${langCode}.${repository}`;
 const transUrl = `https://${username}:${token}@github.com/${owner}/${transRepoName}.git`;
 const defaultBranch = 'master';
 
-logger.info(`Begin to sync the ${transRepoName}`)
+console.log(`Begin to sync the ${transRepoName}`)
 // Set up
 if (shell.cd('repo').code !== 0) {
   shell.mkdir('repo');
@@ -47,13 +43,13 @@ if (shell.cd('repo').code !== 0) {
 }
 
 if (shell.cd(transRepoName).code !== 0) {
-  logger.info("Can't find translation repo locally. Cloning...");
+  console.log("Can't find translation repo locally. Cloning...");
   shell.exec(`git clone ${transUrl} ${transRepoName}`);
-  logger.info('Finished cloning.');
+  console.log('Finished cloning.');
   shell.cd(transRepoName);
   shell.exec(`git remote add ${repository} ${originalUrl}`);
 }else{
-  logger.info("The translation repo exists");
+  console.log("The translation repo exists");
   // Pull from our own origin
   shell.exec(`git checkout ${defaultBranch}`);
   shell.exec(`git pull origin ${defaultBranch}`);
@@ -68,9 +64,9 @@ shell.exec(`git config pull.ff only`);
 // Pull from {source}/master
 const output = shell.exec(`git pull ${repository} ${defaultBranch}`).stdout;
 if (output.includes('Already up to date.') || output.includes('Already up-to-date.')) {
-  logger.info(`We are already up to date with ${repository}.`);
+  console.log(`We are already up to date with ${repository}.`);
 }else{
-  logger.info(`There are new commits in ${repository}.`);
+  console.log(`There are new commits in ${repository}.`);
   shell.exec(`git commit -am "merging all conflicts"`);
   const hash = shell.exec(`git rev-parse ${defaultBranch}`).stdout;
   const shortHash = hash.substr(0, 8);
@@ -88,12 +84,12 @@ if (output.includes('Already up to date.') || output.includes('Already up-to-dat
 
     // If no conflicts, merge directly into master
     if (conflictFiles.length === 0) {
-      logger.info('No conflicts found. Committing directly to master.');
+      console.log('No conflicts found. Committing directly to master.');
       shell.exec(`git checkout ${defaultBranch}`);
       shell.exec(`git merge ${syncBranch}`);
       shell.exec(`git push origin ${defaultBranch}`);
     }else{
-      logger.warn('conflict files: ', conflictFiles.join('\n'));
+      console.log('conflict files: ', conflictFiles.join('\n'));
       // Create a new pull request, listing all conflicting files
       shell.exec(`git push --set-upstream origin ${syncBranch}`);
 
@@ -126,7 +122,7 @@ if (output.includes('Already up to date.') || output.includes('Already up-to-dat
 
       let retryNum =0
       async function createPullRequest() {
-        logger.info(`It's ready to create a pull request.`);
+        console.log(`It's ready to create a pull request.`);
         retryNum++;
         const octokit = new Octokit({
           auth: `token ${token}`,
@@ -144,7 +140,7 @@ if (output.includes('Already up to date.') || output.includes('Already up-to-dat
             head: syncBranch,
             base: defaultBranch,
           });
-          logger.info(`The pull request is created successly,its number is ${number}`);
+          console.log(`The pull request is created successly,its number is ${number}`);
           await octokit.pulls.createReviewRequest({
             owner,
             repo: transRepoName,
@@ -152,18 +148,17 @@ if (output.includes('Already up to date.') || output.includes('Already up-to-dat
             // reviewers: getRandomSubset(maintainers, 3),
             reviewers
           });
-          logger.info(`The review request is created successly`);
+          console.log(`The review request is created successly`);
         }
         catch(err){
           console.log(err)
-          logger.error(`the err is \n ${err}`)
           retryNum<5 && createPullRequest()
         }
       }
       createPullRequest();
     }
   }else{
-    logger.info(`The pull request of sync-${shortHash} is pending `);
+    console.log(`The pull request of sync-${shortHash} is pending `);
   }
 }
 
