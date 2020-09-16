@@ -11,7 +11,11 @@ let reviewers = arguments[1]
 const username = arguments[2];
 const token = arguments[3];
 const email = arguments[4];
-
+console.log(`langCode is ${langCode}`)
+console.log(`reviewers is ${reviewers}`)
+console.log(`username is ${username}`)
+console.log(`token is ${token}`)
+console.log(`email is ${email}`)
 program // options
   .option('-d, --delete', 'Delete repo when done')
   .parse(process.argv);
