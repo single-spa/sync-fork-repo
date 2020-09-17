@@ -42,125 +42,113 @@ if (shell.cd('repo').code !== 0) {
   shell.cd('repo');
 }
 
-if (shell.cd(transRepoName).code !== 0) {
-  console.log("Can't find translation repo locally. Cloning...");
-  shell.exec(`git clone ${transUrl} ${transRepoName}`);
-  console.log('Finished cloning.');
-  shell.cd(transRepoName);
-  shell.exec(`git remote add ${repository} ${originalUrl}`);
-}else{
-  console.log("The translation repo exists");
-  // Pull from our own origin
-  shell.exec(`git checkout ${defaultBranch}`);
-  shell.exec(`git pull origin ${defaultBranch}`);
-
-  shell.exec(`git remote add ${repository} ${originalUrl}`);
-}
+shell.exec(`git clone ${transUrl} ${transRepoName}`);
+console.log('Finished cloning.');
+shell.cd(transRepoName);
+shell.exec(`git remote add ${repository} ${originalUrl}`);
 
 shell.exec(`git config user.name ${username}`);
 shell.exec(`git config user.email ${email}`);
-shell.exec(`git config pull.ff only`);
 
 // Pull from {source}/master
 const output = shell.exec(`git pull ${repository} ${defaultBranch}`).stdout;
-if (output.includes('Already up to date.') || output.includes('Already up-to-date.')) {
-  console.log(`We are already up to date with ${repository}.`);
-}else{
-  console.log(`There are new commits in ${repository}.`);
-  shell.exec(`git commit -am "merging all conflicts"`);
-  const hash = shell.exec(`git rev-parse ${defaultBranch}`).stdout;
-  const shortHash = hash.substr(0, 8);
-  const syncBranch = `sync-${shortHash}`;
-  
-  if (shell.exec(`git checkout ${syncBranch}`).code !== 0) {
-    shell.exec(`git checkout -b ${syncBranch}`);
-  
-    const lines = output.split('\n');
-    // Commit all merge conflicts
-    const conflictLines = lines.filter(line => line.startsWith('CONFLICT'));
-    const conflictFiles = conflictLines.map(line =>
-      line.substr(line.lastIndexOf(' ') + 1),
-    );
 
-    // If no conflicts, merge directly into master
-    if (conflictFiles.length === 0) {
-      console.log('No conflicts found. Committing directly to master.');
-      shell.exec(`git checkout ${defaultBranch}`);
-      shell.exec(`git merge ${syncBranch}`);
-      shell.exec(`git push origin ${defaultBranch}`);
-    }else{
-      console.log('conflict files: ', conflictFiles.join('\n'));
-      // Create a new pull request, listing all conflicting files
-      shell.exec(`git push --set-upstream origin ${syncBranch}`);
+console.log(`There are new commits in ${repository}.`);
+shell.exec(`git commit -am "merging all conflicts"`);
+const hash = shell.exec(`git rev-parse ${defaultBranch}`).stdout;
+const shortHash = hash.substr(0, 8);
+const syncBranch = `sync-${shortHash}`;
 
-      const title = `Sync with ${repository} @ ${shortHash}`;
+if (shell.exec(`git checkout ${syncBranch}`).code !== 0) {
+  shell.exec(`git checkout -b ${syncBranch}`);
 
-      const conflictsText = `
-      The following files have conflicts and may need new translations:
+  const lines = output.split('\n');
+  // Commit all merge conflicts
+  const conflictLines = lines.filter(line => line.startsWith('CONFLICT'));
+  const conflictFiles = conflictLines.map(line =>
+    line.substr(line.lastIndexOf(' ') + 1),
+  );
 
-        ${conflictFiles
-          .map(
-            file =>
-              ` * [ ] [${file}](/${owner}/${repository}/commits/master/${file})`,
-          )
-          .join('\n')}
-
-      Please fix the conflicts by pushing new commits to this pull request, either by editing the files directly on GitHub or by checking out this branch.
-      `;
-
-      const body = `
-      This PR was automatically generated.
-
-      Merge changes from [single-spa/single-spa.js.orgc](https://github.com/single-spa/single-spa.js.org) at ${shortHash}
-
-      ${conflictFiles.length > 0 ? conflictsText : 'No conflicts were found.'}
-
-      ## DO NOT SQUASH MERGE THIS PULL REQUEST!
-
-      Doing so will "erase" the commits from master and cause them to show up as conflicts the next time we merge.
-      `;
-
-      let retryNum =0
-      async function createPullRequest() {
-        console.log(`It's ready to create a pull request.`);
-        retryNum++;
-        const octokit = new Octokit({
-          auth: `token ${token}`,
-          previews: ['hellcat-preview'],
-        });
-      
-        try{
-          const {
-            data: {number},
-          } = await octokit.pulls.create({
-            owner,
-            repo: transRepoName,
-            title,
-            body,
-            head: syncBranch,
-            base: defaultBranch,
-          });
-          console.log(`The pull request is created successly,its number is ${number}`);
-          await octokit.pulls.createReviewRequest({
-            owner,
-            repo: transRepoName,
-            pull_number:number,
-            // reviewers: getRandomSubset(maintainers, 3),
-            reviewers
-          });
-          console.log(`The review request is created successly`);
-        }
-        catch(err){
-          console.log(err)
-          retryNum<5 && createPullRequest()
-        }
-      }
-      createPullRequest();
-    }
+  // If no conflicts, merge directly into master
+  if (conflictFiles.length === 0) {
+    console.log('No conflicts found. Committing directly to master.');
+    shell.exec(`git checkout ${defaultBranch}`);
+    shell.exec(`git merge ${syncBranch}`);
+    shell.exec(`git push origin ${defaultBranch}`);
+    shell.exec(`git remote get-url origin`)
+    console.log('Finished git pushed ')
   }else{
-    console.log(`The pull request of sync-${shortHash} is pending `);
+    console.log('conflict files: ', conflictFiles.join('\n'));
+    // Create a new pull request, listing all conflicting files
+    shell.exec(`git push --set-upstream origin ${syncBranch}`);
+
+    const title = `Sync with ${repository} @ ${shortHash}`;
+
+    const conflictsText = `
+    The following files have conflicts and may need new translations:
+
+      ${conflictFiles
+        .map(
+          file =>
+            ` * [ ] [${file}](/${owner}/${repository}/commits/master/${file})`,
+        )
+        .join('\n')}
+
+    Please fix the conflicts by pushing new commits to this pull request, either by editing the files directly on GitHub or by checking out this branch.
+    `;
+
+    const body = `
+    This PR was automatically generated.
+
+    Merge changes from [single-spa/single-spa.js.orgc](https://github.com/single-spa/single-spa.js.org) at ${shortHash}
+
+    ${conflictFiles.length > 0 ? conflictsText : 'No conflicts were found.'}
+
+    ## DO NOT SQUASH MERGE THIS PULL REQUEST!
+
+    Doing so will "erase" the commits from master and cause them to show up as conflicts the next time we merge.
+    `;
+
+    let retryNum =0
+    async function createPullRequest() {
+      console.log(`It's ready to create a pull request.`);
+      retryNum++;
+      const octokit = new Octokit({
+        auth: `token ${token}`,
+        previews: ['hellcat-preview'],
+      });
+    
+      try{
+        const {
+          data: {number},
+        } = await octokit.pulls.create({
+          owner,
+          repo: transRepoName,
+          title,
+          body,
+          head: syncBranch,
+          base: defaultBranch,
+        });
+        console.log(`The pull request is created successly,its number is ${number}`);
+        await octokit.pulls.createReviewRequest({
+          owner,
+          repo: transRepoName,
+          pull_number:number,
+          reviewers
+        });
+        console.log(`The review request is created successly`);
+      }
+      catch(err){
+        console.log(err)
+        retryNum<5 && createPullRequest()
+      }
+    }
+    createPullRequest();
   }
+}else{
+  console.log(`The pull request of sync-${shortHash} is pending `);
 }
+
 
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random#Getting_a_random_integer_between_two_values
 function getRandomInt(min, max) {
