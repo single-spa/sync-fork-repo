@@ -134,7 +134,7 @@ if (shell.exec(`git checkout ${syncBranch}`).code !== 0) {
           owner,
           repo: transRepoName,
           pull_number:number,
-          reviewers
+          reviewers: reviewers.split(',') // api changes, reviewers need to be an array
         });
         console.log(`The review request is created successly`);
       }
