@@ -3,6 +3,7 @@ const log4js = require('log4js');
 const { Octokit } = require("@octokit/rest")
 const program = require('commander');
 const {getJSON} = require('../util');
+const colors = require('colors');
 // shell.config.silent = true;
 
 let arguments = process.argv.splice(2)
@@ -35,7 +36,7 @@ const transRepoName = `${langCode}.${repository}`;
 const transUrl = `https://${username}:${token}@github.com/${owner}/${transRepoName}.git`;
 const defaultBranch = 'master';
 
-console.log(`Begin to sync the ${transRepoName}`)
+console.log(`\nBegin to sync the ${transRepoName}`.green.bold)
 // Set up
 if (shell.cd('repo').code !== 0) {
   shell.mkdir('repo');
@@ -71,7 +72,7 @@ if (shell.exec(`git checkout ${syncBranch}`).code !== 0) {
 
   // If no conflicts, merge directly into master
   if (conflictFiles.length === 0) {
-    console.log('No conflicts found. Committing directly to master.');
+    console.log('\nNo conflicts found. Committing directly to master.'.green.bold);
     shell.exec(`git checkout ${defaultBranch}`);
     shell.exec(`git merge ${syncBranch}`);
     shell.exec(`git push origin ${defaultBranch}`);
@@ -136,7 +137,7 @@ if (shell.exec(`git checkout ${syncBranch}`).code !== 0) {
           pull_number:number,
           reviewers: reviewers.split(',') // api changes, reviewers need to be an array
         });
-        console.log(`The review request is created successly`);
+        console.log(`\nThe review request is created successly`.rainbow.bold);
       }
       catch(err){
         console.log(err)
@@ -146,7 +147,7 @@ if (shell.exec(`git checkout ${syncBranch}`).code !== 0) {
     createPullRequest();
   }
 }else{
-  console.log(`The pull request of sync-${shortHash} is pending `);
+  console.log(`\nThe pull request of sync-${shortHash} is pending `.rainbow.bold);
 }
 
 

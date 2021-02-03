@@ -19,6 +19,7 @@
     "url": "https://github.com/guguji5/sync-fork-repo/issues"
   },
   "dependencies": {
+    "colors": "^1.4.0",
     "@octokit/rest": "^16.15.0",
     "bluebird": "^3.5.3",
     "commander": "^2.19.0",
