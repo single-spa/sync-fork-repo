@@ -12,7 +12,7 @@ module.exports=function(){
     },{
       "name": "Spanish",
       "code": "es",
-      "reviewers": ["codesandtags","crorodriguezro"]
+      "reviewers": ["codesandtags"]
     },{
       "name": "Russian",
       "code": "ru",
