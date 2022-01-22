@@ -80,7 +80,6 @@ if (shell.exec(`git checkout ${syncBranch}`).code !== 0) {
     shell.exec(`git merge ${syncBranch}`);
     shell.exec(`git push origin ${defaultBranch}`);
     shell.exec(`git remote get-url origin`);
-    console.log("Finished git pushed ");
   } else {
     console.log("conflict files: ", conflictFiles.join("\n"));
     // Create a new pull request, listing all conflicting files

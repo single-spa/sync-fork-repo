@@ -28,4 +28,4 @@ jobs:
         run: npm install
 
       - name: Exec the job
-        run: node index.js ${{ secrets.ACCESS_TOKEN }}
+        run: node --no-warnings index.js ${{ secrets.ACCESS_TOKEN }}
