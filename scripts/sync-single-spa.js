@@ -46,7 +46,7 @@ if (shell.cd("repo").code !== 0) {
 shell.exec(`git clone ${transUrl} ${transRepoName}`);
 console.log("Finished cloning.");
 shell.cd(transRepoName);
-// shell.exec(`git remote add ${repository} ${originalUrl}`);
+shell.exec(`git remote add ${repository} ${originalUrl}`);
 
 shell.exec(`git config user.name ${username}`);
 shell.exec(`git config user.email ${email}`);
